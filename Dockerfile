@@ -1,30 +1,21 @@
 FROM centos:centos7
 
-MAINTAINER "Dylan Lindgren" <dylan.lindgren@gmail.com>
+MAINTAINER "Phil Weir" <phil.weir@flaxandteal.co.uk>
 
 # Install MariaDB
 ADD config/MariaDB.repo /etc/yum.repos.d/MariaDB.repo
 RUN yum update -y
-RUN yum install -y MariaDB-server MariaDB-client
+RUN yum install -y MariaDB-client
 
-# Configure MariaDB
-ADD config/my.cnf /etc/my.cnf
+VOLUME ["/data"]
 
-# All the MariaDB data that you'd want to backup will be redirected here
-RUN mkdir /data
-VOLUME ["/data/mariadb"]
+RUN useradd -s /bin/false mysql
 
-# Port 3306 is where MariaDB listens on
-EXPOSE 3306
-
-# These scripts will be used to launch MariaDB and configure it
-# securely if no data exists in /data/mariadb
-ADD config/mariadb-start.sh /opt/bin/mariadb-start.sh 
-ADD config/mariadb-setup.sql /opt/bin/mariadb-setup.sql
-RUN chmod u=rwx /opt/bin/mariadb-start.sh
-RUN chown mysql:mysql /opt/bin/mariadb-start.sh /opt/bin/mariadb-setup.sql /data/mariadb
+ADD config/mariadb-seed.sh /opt/bin/mariadb-seed.sh
+RUN chmod u=rwx /opt/bin/mariadb-seed.sh
+RUN chown mysql:mysql /opt/bin/mariadb-seed.sh
 
 # run all subsequent commands as the mysql user
 USER mysql
 
-ENTRYPOINT ["/opt/bin/mariadb-start.sh"]
+ENTRYPOINT ["/opt/bin/mariadb-seed.sh"]
